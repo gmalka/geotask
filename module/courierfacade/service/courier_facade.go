@@ -33,10 +33,25 @@ func (c CourierFacade) MoveCourier(ctx context.Context, direction, zoom int) {
 	if err != nil {
 		log.Println(err)
 	}
-	
+
 	c.courierService.MoveCourier(*courier, direction, zoom)
 }
 
 func (c CourierFacade) GetStatus(ctx context.Context) cfm.CourierStatus {
+	courier, err := c.courierService.GetCourier(ctx)
+	if err != nil {
+		log.Println(err)
+	}
 
+	orders, err := c.orderService.GetByRadius(ctx, courier.Location.Lng, courier.Location.Lat, CourierVisibilityRadius, "km")
+	if err != nil {
+		log.Println(err)
+	}
+
+	status := cfm.CourierStatus{
+		Courier: *courier,
+		Orders: orders,
+	}
+
+	return status
 }
