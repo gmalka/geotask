@@ -15,6 +15,7 @@ func NewRouter(courier *controller.CourierController) *Router {
 
 func (r *Router) CourierAPI(router *gin.RouterGroup) {
 	// прописать роуты для courier API
+	router.GET("/status", r.courier.GetStatus)
 }
 
 func (r *Router) Swagger(router *gin.RouterGroup) {

@@ -1,7 +1,6 @@
 package run
 
 import (
-	"context"
 	"github.com/gin-gonic/gin"
 	"gitlab.com/ptflp/geotask/cache"
 	"gitlab.com/ptflp/geotask/geo"
@@ -16,7 +15,6 @@ import (
 	"gitlab.com/ptflp/geotask/workers/order"
 	"net/http"
 	"os"
-	"time"
 )
 
 type App struct {
