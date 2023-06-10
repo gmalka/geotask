@@ -2,7 +2,6 @@ package controller
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -16,7 +15,7 @@ import (
 func (c *CourierController) Websocket(ctx *gin.Context) {
 	conn, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 	handleConnection(conn, c.MoveCourier)

@@ -88,7 +88,7 @@ func GetRandomAllowedLocation(allowedZone PolygonChecker, disabledZones []Polygo
 	for {
 		point = allowedZone.RandomPoint()
 		for i := 0; i < len(disabledZones) + 1; i++ {
-			if i == len(disabledZones) + 1 {
+			if i == len(disabledZones) {
 				return point
 			}
 			if disabledZones[i].Contains(point) {

@@ -28,6 +28,7 @@ type Orderer interface {
 	GetCount(ctx context.Context) (int, error)                                                      // возвращает количество заказов через метод storage.GetCount
 	RemoveOldOrders(ctx context.Context) error                                                      // удаляет старые заказы через метод storage.RemoveOldOrders с заданным временем жизни OrderMaxAge
 	GenerateOrder(ctx context.Context) error                                                        // генерирует заказ в случайной точке из разрешенной зоны, с уникальным id, ценой и ценой доставки
+	DeleteByRadius(ctx context.Context, lng, lat, radius float64, unit string) (int, error)
 }
 
 // OrderService реализация интерфейса Orderer
@@ -47,6 +48,10 @@ func (o *OrderService) GetByRadius(ctx context.Context, lng, lat, radius float64
 	return o.storage.GetByRadius(ctx, lng, lat, radius, unit)
 }
 
+func (o *OrderService) DeleteByRadius(ctx context.Context, lng, lat, radius float64, unit string) (int, error) {
+	return o.storage.DeleteByRadius(ctx, lng, lat, radius, unit)
+}
+
 func (o *OrderService) Save(ctx context.Context, order models.Order) error {
 	return o.storage.Save(ctx, order, orderMaxAge)
 }
@@ -60,7 +65,7 @@ func (o *OrderService) RemoveOldOrders(ctx context.Context) error {
 }
 
 func (o *OrderService) GenerateOrder(ctx context.Context) error {
-	rand.Seed(time.Now().Unix())
+	rand.Seed(time.Now().UnixNano())
 	deliveryPrice := minDeliveryPrice + rand.Float64() * (maxDeliveryPrice - minDeliveryPrice)
 	orderPrice := minDeliveryPrice + rand.Float64() * (maxOrderPrice - minDeliveryPrice)
 	point := geo.GetRandomAllowedLocation(o.allowedZone, o.disabledZones)

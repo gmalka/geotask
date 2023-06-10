@@ -250,6 +250,7 @@
 
                 updateMarkers(gameStatus.orders);
                 courierMarker.moveTo([gameStatus.courier.location.lat, gameStatus.courier.location.lng], 500);
+                score = gameStatus.courier.score
                 courierMarker.bindPopup(`
                     Lat: ${gameStatus.courier.location.lat} <br/>
                     Lng: ${gameStatus.courier.location.lng} <br/>

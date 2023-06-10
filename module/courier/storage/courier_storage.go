@@ -30,6 +30,7 @@ func (c CourierStorage) Save(ctx context.Context, courier models.Courier) error 
 	}
 
 	_, err = c.storage.Set(key, b, 0).Result()
+
 	return err
 }
 
@@ -41,7 +42,7 @@ func (c CourierStorage)GetOne(ctx context.Context) (*models.Courier, error) {
 		return nil, err
 	}
 
-	err = json.Unmarshal(b, courier)
+	err = json.Unmarshal(b, &courier)
 	if err != nil {
 		return nil, err
 	}

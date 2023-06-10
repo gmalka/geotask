@@ -1,6 +1,10 @@
 package run
 
 import (
+	"fmt"
+	"net/http"
+	"os"
+
 	"github.com/gin-gonic/gin"
 	"gitlab.com/ptflp/geotask/cache"
 	"gitlab.com/ptflp/geotask/geo"
@@ -13,8 +17,6 @@ import (
 	"gitlab.com/ptflp/geotask/router"
 	"gitlab.com/ptflp/geotask/server"
 	"gitlab.com/ptflp/geotask/workers/order"
-	"net/http"
-	"os"
 )
 
 type App struct {
@@ -84,12 +86,12 @@ func (a *App) Run() error {
 	r.NoRoute(gin.WrapH(http.FileServer(http.Dir("public"))))
 
 	// запуск сервера
-	//serverPort := os.Getenv("SERVER_PORT")
+	serverPort := os.Getenv("SERVER_PORT")
 
 	if os.Getenv("ENV") == "prod" {
 		certFile := "/app/certs/cert.pem"
 		keyFile := "/app/certs/private.pem"
-		return r.RunTLS(":443", certFile, keyFile)
+		return r.RunTLS(/*":443"*/ fmt.Sprintf(":%s", serverPort), certFile, keyFile)
 	}
 
 	return r.Run()

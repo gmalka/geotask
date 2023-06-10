@@ -1,8 +1,11 @@
 package order
 
 import (
-	"gitlab.com/ptflp/geotask/module/order/service"
+	"context"
+	"log"
 	"time"
+
+	"gitlab.com/ptflp/geotask/module/order/service"
 )
 
 const (
@@ -20,6 +23,21 @@ func NewOrderCleaner(orderService service.Orderer) *OrderCleaner {
 }
 
 func (o *OrderCleaner) Run() {
+	go func () {
+		var err error
+
+		ticker := time.NewTicker(orderCleanInterval)
+		ch := ticker.C
+		for {
+			select {
+			case <-ch:
+				err = o.orderService.RemoveOldOrders(context.Background())
+				if err != nil {
+					log.Println("Run: ", err)
+				}
+			}
+		}
+	}()
 	// исользовать горутину и select
 	// внутри горутины нужно использовать time.NewTicker()
 	// и вызывать метод orderService.RemoveOldOrders()

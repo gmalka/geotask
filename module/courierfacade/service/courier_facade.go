@@ -31,7 +31,21 @@ func NewCourierFacade(courierService cservice.Courierer, orderService oservice.O
 func (c CourierFacade) MoveCourier(ctx context.Context, direction, zoom int) {
 	courier, err := c.courierService.GetCourier(ctx)
 	if err != nil {
+		log.Println("MoveCourier: ", err)
+	}
+	if courier == nil {
+		log.Fatalln("Nil founded")
+	}
+
+	radius := 5.0 * float64(19.0 - zoom)
+	log.Println(radius)
+	count, err := c.orderService.DeleteByRadius(ctx, courier.Location.Lng, courier.Location.Lat, radius, "m")
+	if err != nil {
 		log.Println(err)
+	}
+
+	for i := 0; i < count; i++ {
+		courier.Score++
 	}
 
 	c.courierService.MoveCourier(*courier, direction, zoom)
@@ -40,12 +54,12 @@ func (c CourierFacade) MoveCourier(ctx context.Context, direction, zoom int) {
 func (c CourierFacade) GetStatus(ctx context.Context) cfm.CourierStatus {
 	courier, err := c.courierService.GetCourier(ctx)
 	if err != nil {
-		log.Println(err)
+		log.Println("GetStatus: ", err)
 	}
 
-	orders, err := c.orderService.GetByRadius(ctx, courier.Location.Lng, courier.Location.Lat, CourierVisibilityRadius, "km")
+	orders, err := c.orderService.GetByRadius(ctx, courier.Location.Lng, courier.Location.Lat, CourierVisibilityRadius, "m")
 	if err != nil {
-		log.Println(err)
+		log.Println("GetByRadius: ", err)
 	}
 
 	status := cfm.CourierStatus{
