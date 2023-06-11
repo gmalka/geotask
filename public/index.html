@@ -124,6 +124,7 @@
     scoreDisplay.onAdd = function(map) {
         var div = L.DomUtil.create('div', 'score');
         div.style.fontSize = "24px";
+        div.id = "score-control";
         div.innerHTML = "Score: " + score;
         return div;
     }
@@ -240,6 +241,8 @@
         addMarkers(orders);
     }
 
+    scoreDis = document.getElementById("score-control");
+
     function longPoll() {
         var xhr = new XMLHttpRequest();
         xhr.onreadystatechange = function() {
@@ -250,7 +253,8 @@
 
                 updateMarkers(gameStatus.orders);
                 courierMarker.moveTo([gameStatus.courier.location.lat, gameStatus.courier.location.lng], 500);
-                score = gameStatus.courier.score
+               
+                scoreDis.innerHTML = `score: ${gameStatus.courier.score}`;
                 courierMarker.bindPopup(`
                     Lat: ${gameStatus.courier.location.lat} <br/>
                     Lng: ${gameStatus.courier.location.lng} <br/>
@@ -264,6 +268,7 @@
     }
 
     longPoll();
+
 
 </script>
 </body>

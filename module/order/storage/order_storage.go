@@ -120,10 +120,6 @@ func (o *OrderStorage) RemoveOldOrders(ctx context.Context, maxAge time.Duration
 	return nil
 }
 
-// 1686405326813278638
-//        120000000000
-// 1686405446813281196
-
 func (o *OrderStorage) GetByID(ctx context.Context, orderID int) (*models.Order, error) {
 	var err error
 	var data []byte

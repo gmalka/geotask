@@ -79,7 +79,17 @@ func (p *Polygon) RandomPoint() Point {
 func CheckPointIsAllowed(point Point, allowedZone PolygonChecker, disabledZones []PolygonChecker) bool {
 	// проверить, находится ли точка в разрешенной зоне
 
-	return allowedZone.Contains(point)
+	if allowedZone.Contains(point) {
+		for _, v := range disabledZones {
+			if v.Contains(point) {
+				return false
+			}
+		}
+	} else {
+		return false
+	}
+
+	return true
 }
 
 func GetRandomAllowedLocation(allowedZone PolygonChecker, disabledZones []PolygonChecker) Point {

@@ -20,10 +20,10 @@
           "status"
         ],
         "summary": "Получение статуса сервиса.",
-        "operationId": "status",
+        "operationId": "emptyRequest",
         "responses": {
           "200": {
-            "$ref": "#/responses/strategyCreateResponse"
+            "$ref": "#/responses/getStatusResponse"
           }
         }
       }
@@ -118,7 +118,7 @@
     }
   },
   "responses": {
-    "strategyCreateResponse": {
+    "getStatusResponse": {
       "description": "",
       "schema": {
         "$ref": "#/definitions/CourierStatus"
