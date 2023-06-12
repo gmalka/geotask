@@ -11,6 +11,7 @@ import (
 	"gitlab.com/ptflp/geotask/module/order/models"
 )
 
+//go:generate mockery --name OrderStorager
 type OrderStorager interface {
 	Save(ctx context.Context, order models.Order, maxAge time.Duration) error                       // сохранить заказ с временем жизни
 	GetByID(ctx context.Context, orderID int) (*models.Order, error)                                // получить заказ по id

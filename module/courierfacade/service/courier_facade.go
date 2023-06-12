@@ -13,6 +13,7 @@ const (
 	CourierVisibilityRadius = 2800 // 2.8km
 )
 
+//go:generate mockery --name CourierFacer
 type CourierFacer interface {
 	MoveCourier(ctx context.Context, direction, zoom int) // отвечает за движение курьера по карте direction - направление движения, zoom - уровень зума
 	GetStatus(ctx context.Context) cfm.CourierStatus      // отвечает за получение статуса курьера и заказов вокруг него

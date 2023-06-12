@@ -22,6 +22,7 @@ const (
 
 var id int64
 
+//go:generate mockery --name Orderer
 type Orderer interface {
 	GetByRadius(ctx context.Context, lng, lat, radius float64, unit string) ([]models.Order, error) // возвращает заказы через метод storage.GetByRadius
 	Save(ctx context.Context, order models.Order) error                                             // сохраняет заказ через метод storage.Save с заданным временем жизни OrderMaxAge

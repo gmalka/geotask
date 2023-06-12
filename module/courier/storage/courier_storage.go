@@ -8,6 +8,7 @@ import (
 	"gitlab.com/ptflp/geotask/module/courier/models"
 )
 
+//go:generate mockery --name CourierStorager
 type CourierStorager interface {
 	Save(ctx context.Context, courier models.Courier) error // сохранить курьера по ключу courier
 	GetOne(ctx context.Context) (*models.Courier, error)    // получить курьера по ключу courier

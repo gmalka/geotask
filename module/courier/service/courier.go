@@ -23,6 +23,7 @@ const (
 	DefaultCourierLng = 30.3609
 )
 
+//go:generate mockery --name Courierer
 type Courierer interface {
 	GetCourier(ctx context.Context) (*models.Courier, error)
 	MoveCourier(courier models.Courier, direction, zoom int) error
