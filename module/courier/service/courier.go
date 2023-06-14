@@ -36,7 +36,7 @@ type CourierService struct {
 }
 
 func NewCourierService(courierStorage storage.CourierStorager, allowedZone geo.PolygonChecker, disbledZones []geo.PolygonChecker) Courierer {
-	point := geo.GetRandomAllowedLocation(allowedZone, disbledZones)
+	point := GetRandomAllowedLocation(allowedZone, disbledZones)
 	err := courierStorage.Save(context.Background(), models.Courier{Score: 0, Location: models.Point{Lat: point.Lat, Lng: point.Lng}})
 	if err != nil {
 		log.Fatalf("NewCourierService: %s\n", err)
@@ -51,8 +51,8 @@ func (c *CourierService) GetCourier(ctx context.Context) (*models.Courier, error
 		return nil, err
 	}
 
-	if !geo.CheckPointIsAllowed(geo.Point{Lat: courier.Location.Lat, Lng: courier.Location.Lng}, c.allowedZone, c.disabledZones) {
-		point := geo.GetRandomAllowedLocation(c.allowedZone, c.disabledZones)
+	if !CheckPointIsAllowed(geo.Point{Lat: courier.Location.Lat, Lng: courier.Location.Lng}, c.allowedZone, c.disabledZones) {
+		point := GetRandomAllowedLocation(c.allowedZone, c.disabledZones)
 		courier.Location.Lat = point.Lat
 		courier.Location.Lng = point.Lng
 	}
@@ -86,12 +86,44 @@ func (c *CourierService) MoveCourier(courier models.Courier, direction, zoom int
 
 	// далее нужно проверить, что курьер не вышел за границы зоны
 	// если вышел, то нужно переместить его в случайную точку внутри зоны
-	if !geo.CheckPointIsAllowed(geo.Point{Lat: courier.Location.Lat, Lng: courier.Location.Lng}, c.allowedZone, c.disabledZones) {
-		point := geo.GetRandomAllowedLocation(c.allowedZone, c.disabledZones)
+	if !CheckPointIsAllowed(geo.Point{Lat: courier.Location.Lat, Lng: courier.Location.Lng}, c.allowedZone, c.disabledZones) {
+		point := GetRandomAllowedLocation(c.allowedZone, c.disabledZones)
 		courier.Location.Lat = point.Lat
 		courier.Location.Lng = point.Lng
 	}
 
 	// далее сохранить изменения в хранилище
 	return c.courierStorage.Save(context.Background(), courier)
+}
+
+func CheckPointIsAllowed(point geo.Point, allowedZone geo.PolygonChecker, disabledZones []geo.PolygonChecker) bool {
+	// проверить, находится ли точка в разрешенной зоне
+
+	if allowedZone.Contains(point) {
+		for _, v := range disabledZones {
+			if v.Contains(point) {
+				return false
+			}
+		}
+	} else {
+		return false
+	}
+
+	return true
+}
+
+func GetRandomAllowedLocation(allowedZone geo.PolygonChecker, disabledZones []geo.PolygonChecker) geo.Point {
+	var point geo.Point
+	// получение случайной точки в разрешенной зоне
+	for {
+		point = allowedZone.RandomPoint()
+		for i := 0; i < len(disabledZones) + 1; i++ {
+			if i == len(disabledZones) {
+				return point
+			}
+			if disabledZones[i].Contains(point) {
+				break
+			}
+		}
+	}
 }

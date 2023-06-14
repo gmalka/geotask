@@ -12,6 +12,7 @@ type Point struct {
 	Lng float64 `json:"lng"`
 }
 
+//go:generate mockery --name PolygonChecker
 type PolygonChecker interface {
 	Contains(point Point) bool // проверить, находится ли точка внутри полигона
 	Allowed() bool             // разрешено ли входить в полигон
