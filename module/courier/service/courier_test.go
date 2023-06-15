@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"errors"
+	"math"
 	"reflect"
 	"testing"
 
@@ -60,22 +62,43 @@ func TestNewCourierService(t *testing.T) {
 
 func TestCourierService_GetCourier(t *testing.T) {
 
+	// first
 	courierStorage := mocks.NewCourierStorager(t)
+	disbledZonesFirst := mocks.NewPolygonChecker(t)
+	disbledZonesSecond := mocks.NewPolygonChecker(t)
+	allowedZone := mocks.NewPolygonChecker(t)
 
 	point := models.Point{Lat: 9.00, Lng: 10.00}
 	courier := &models.Courier{Score: 0, Location: point}
+	
 	courierStorage.On("GetOne", context.Background()).Return(courier, nil)
-
-	allowedZone := mocks.NewPolygonChecker(t)
 	allowedZone.On("Contains", geo.Point(point)).Return(true)
-
-	disbledZonesFirst := mocks.NewPolygonChecker(t)
 	disbledZonesFirst.On("Contains", geo.Point(point)).Return(false)
-	disbledZonesSecond := mocks.NewPolygonChecker(t)
 	disbledZonesSecond.On("Contains", geo.Point(point)).Return(false)
 	disabledZone := make([]geo.PolygonChecker, 0, 2)
 	disabledZone = append(disabledZone, disbledZonesFirst)
 	disabledZone = append(disabledZone, disbledZonesSecond)
+
+	// second
+	courierStorageSecond := mocks.NewCourierStorager(t)
+
+	point2 := models.Point{Lat: 10.00, Lng: 11.00}
+	courier2 := &models.Courier{Score: 0, Location: point2}
+	
+	courierStorageSecond.On("GetOne", context.Background()).Return(courier2, nil)
+	allowedZone.On("Contains", geo.Point(point2)).Return(true)
+	allowedZone.On("RandomPoint").Return(geo.Point(point))
+	disbledZonesFirst.On("Contains", geo.Point(point2)).Return(true)
+	disbledZonesFirst.On("Contains", geo.Point(point)).Return(false)
+	disbledZonesSecond.On("Contains", geo.Point(point)).Return(false)
+	disabledZoneSecond := make([]geo.PolygonChecker, 0, 2)
+	disabledZoneSecond = append(disabledZoneSecond, disbledZonesFirst)
+	disabledZoneSecond = append(disabledZoneSecond, disbledZonesSecond)
+
+	// third
+	courierStorageThird := mocks.NewCourierStorager(t)
+
+	courierStorageThird.On("GetOne", context.Background()).Return(nil, errors.New("Some error"))
 
 	type fields struct {
 		courierStorage storage.CourierStorager
@@ -103,6 +126,28 @@ func TestCourierService_GetCourier(t *testing.T) {
 			want: courier,
 			wantErr: false,
 		},
+		{
+			name: "Not in allowed area get",
+			fields: fields {
+				courierStorage: courierStorageSecond,
+				allowedZone: allowedZone,
+				disabledZones: disabledZoneSecond,
+			},
+			args: args{context.Background()},
+			want: courier2,
+			wantErr: false,
+		},
+		{
+			name: "Error get",
+			fields: fields {
+				courierStorage: courierStorageThird,
+				allowedZone: allowedZone,
+				disabledZones: disabledZoneSecond,
+			},
+			args: args{context.Background()},
+			want: nil,
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -124,6 +169,50 @@ func TestCourierService_GetCourier(t *testing.T) {
 }
 
 func TestCourierService_MoveCourier(t *testing.T) {
+	// first
+	point := models.Point{Lat: 10.00, Lng: 11.00}
+	courier := &models.Courier{Score: 0, Location: point}
+	wantPoint := models.Point{Lat: 10.00 - (float64(0.001) / math.Pow(2, float64(10 - 14))), Lng: 11.00}
+	wantCourier := &models.Courier{Score: 0, Location: wantPoint}
+	
+	courierStorage := mocks.NewCourierStorager(t)
+	allowedZone := mocks.NewPolygonChecker(t)
+	disbledZonesFirst := mocks.NewPolygonChecker(t)
+	disbledZonesSecond := mocks.NewPolygonChecker(t)
+
+	allowedZone.On("Contains", geo.Point(wantPoint)).Return(true)
+	disbledZonesFirst.On("Contains", geo.Point(wantPoint)).Return(false)
+	disbledZonesSecond.On("Contains", geo.Point(wantPoint)).Return(false)
+	courierStorage.On("Save", context.Background(), *wantCourier).Return(nil)
+
+	disabledZone := make([]geo.PolygonChecker, 0, 2)
+	disabledZone = append(disabledZone, disbledZonesFirst)
+	disabledZone = append(disabledZone, disbledZonesSecond)
+
+	// second
+	point2 := models.Point{Lat: 10.00, Lng: 11.00}
+	courier2 := &models.Courier{Score: 0, Location: point2}
+	accuracy := float64(0.001) / math.Pow(2, float64(10 - 14))
+	if accuracy < 0 {
+		accuracy *= -1
+	}
+	wantPoint2 := models.Point{Lat: 10.00 + accuracy, Lng: 11.00}
+
+	courierStorage2 := mocks.NewCourierStorager(t)
+	allowedZone2 := mocks.NewPolygonChecker(t)
+	disbledZonesFirst2 := mocks.NewPolygonChecker(t)
+	disbledZonesSecond2 := mocks.NewPolygonChecker(t)
+
+	allowedZone2.On("Contains", geo.Point(wantPoint2)).Return(false)
+	allowedZone2.On("RandomPoint").Return(geo.Point(point2))
+	disbledZonesFirst2.On("Contains", geo.Point(point2)).Return(false)
+	disbledZonesSecond2.On("Contains", geo.Point(point2)).Return(false)
+	courierStorage2.On("Save", context.Background(), *courier2).Return(nil)
+
+	disabledZone2 := make([]geo.PolygonChecker, 0, 2)
+	disabledZone2 = append(disabledZone2, disbledZonesFirst2)
+	disabledZone2 = append(disabledZone2, disbledZonesSecond2)
+
 	type fields struct {
 		courierStorage storage.CourierStorager
 		allowedZone    geo.PolygonChecker
@@ -140,7 +229,34 @@ func TestCourierService_MoveCourier(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Standart Move",
+			fields: fields{
+				courierStorage: courierStorage,
+				allowedZone: allowedZone,
+				disabledZones: disabledZone,
+			},
+			args: args{
+				courier: *courier,
+				direction: 1,
+				zoom: 10,
+			},
+			wantErr: false,
+		},
+		{
+			name: "Not contain Move",
+			fields: fields{
+				courierStorage: courierStorage2,
+				allowedZone: allowedZone2,
+				disabledZones: disabledZone2,
+			},
+			args: args{
+				courier: *courier2,
+				direction: 0,
+				zoom: 10,
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -157,6 +273,29 @@ func TestCourierService_MoveCourier(t *testing.T) {
 }
 
 func TestCheckPointIsAllowed(t *testing.T) {
+	// first
+	allowedZone := mocks.NewPolygonChecker(t)
+	disbledZonesFirst := mocks.NewPolygonChecker(t)
+	disbledZonesSecond := mocks.NewPolygonChecker(t)
+
+	point := models.Point{Lat: 10.00, Lng: 11.00}
+
+	allowedZone.On("Contains", geo.Point(point)).Return(true)
+	disbledZonesFirst.On("Contains", geo.Point(point)).Return(false)
+	disbledZonesSecond.On("Contains", geo.Point(point)).Return(false)
+
+	disabledZone := make([]geo.PolygonChecker, 0, 2)
+	disabledZone = append(disabledZone, disbledZonesFirst)
+	disabledZone = append(disabledZone, disbledZonesSecond)
+
+	// second
+	disbledZonesSecond2 := mocks.NewPolygonChecker(t)
+	disbledZonesSecond2.On("Contains", geo.Point(point)).Return(true)
+
+	disabledZone2 := make([]geo.PolygonChecker, 0, 2)
+	disabledZone2 = append(disabledZone2, disbledZonesFirst)
+	disabledZone2 = append(disabledZone2, disbledZonesSecond2)
+
 	type args struct {
 		point         geo.Point
 		allowedZone   geo.PolygonChecker
@@ -167,7 +306,24 @@ func TestCheckPointIsAllowed(t *testing.T) {
 		args args
 		want bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Regular allowed check",
+			args: args{
+				point: geo.Point(point),
+				allowedZone: allowedZone,
+				disabledZones: disabledZone,
+			},
+			want: true,
+		},
+		{
+			name: "False allowed check",
+			args: args{
+				point: geo.Point(point),
+				allowedZone: allowedZone,
+				disabledZones: disabledZone2,
+			},
+			want: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -179,6 +335,20 @@ func TestCheckPointIsAllowed(t *testing.T) {
 }
 
 func TestGetRandomAllowedLocation(t *testing.T) {
+	allowedZone := mocks.NewPolygonChecker(t)
+	disbledZonesFirst := mocks.NewPolygonChecker(t)
+	disbledZonesSecond := mocks.NewPolygonChecker(t)
+
+	point := models.Point{Lat: 10.00, Lng: 11.00}
+
+	allowedZone.On("RandomPoint").Return(geo.Point(point))
+	disbledZonesFirst.On("Contains", geo.Point(point)).Return(false)
+	disbledZonesSecond.On("Contains", geo.Point(point)).Return(false)
+
+	disabledZone := make([]geo.PolygonChecker, 0, 2)
+	disabledZone = append(disabledZone, disbledZonesFirst)
+	disabledZone = append(disabledZone, disbledZonesSecond)
+
 	type args struct {
 		allowedZone   geo.PolygonChecker
 		disabledZones []geo.PolygonChecker
@@ -188,7 +358,14 @@ func TestGetRandomAllowedLocation(t *testing.T) {
 		args args
 		want geo.Point
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Regular get random allowed lcoation",
+			args: args{
+				allowedZone: allowedZone,
+				disabledZones: disabledZone,
+			},
+			want: geo.Point(point),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

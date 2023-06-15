@@ -29,7 +29,7 @@ type Orderer interface {
 	GetCount(ctx context.Context) (int, error)                                                      // возвращает количество заказов через метод storage.GetCount
 	RemoveOldOrders(ctx context.Context) error                                                      // удаляет старые заказы через метод storage.RemoveOldOrders с заданным временем жизни OrderMaxAge
 	GenerateOrder(ctx context.Context) error                                                        // генерирует заказ в случайной точке из разрешенной зоны, с уникальным id, ценой и ценой доставки
-	DeleteByRadius(ctx context.Context, lng, lat, radius float64, unit string) (int, error)
+	DeleteByRadius(ctx context.Context, lat, lng, radius float64, unit string) (int, error)
 }
 
 // OrderService реализация интерфейса Orderer
@@ -49,8 +49,8 @@ func (o *OrderService) GetByRadius(ctx context.Context, lng, lat, radius float64
 	return o.storage.GetByRadius(ctx, lng, lat, radius, unit)
 }
 
-func (o *OrderService) DeleteByRadius(ctx context.Context, lng, lat, radius float64, unit string) (int, error) {
-	return o.storage.DeleteByRadius(ctx, lng, lat, radius, unit)
+func (o *OrderService) DeleteByRadius(ctx context.Context, lat, lng, radius float64, unit string) (int, error) {
+	return o.storage.DeleteByRadius(ctx, lat, lng, radius, unit)
 }
 
 func (o *OrderService) Save(ctx context.Context, order models.Order) error {
@@ -74,5 +74,5 @@ func (o *OrderService) GenerateOrder(ctx context.Context) error {
 	order := models.Order{ID: id, Price: orderPrice, DeliveryPrice: deliveryPrice, CreatedAt: time.Now(), Lat: point.Lat, Lng: point.Lng}
 	id++
 
-	return o.Save(ctx, order)
+	return o.storage.Save(ctx, order, orderMaxAge)
 }

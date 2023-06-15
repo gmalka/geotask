@@ -39,8 +39,7 @@ func (c CourierFacade) MoveCourier(ctx context.Context, direction, zoom int) {
 	}
 
 	radius := 5.0 * float64(19.0 - zoom)
-	log.Println(radius)
-	count, err := c.orderService.DeleteByRadius(ctx, courier.Location.Lng, courier.Location.Lat, radius, "m")
+	count, err := c.orderService.DeleteByRadius(ctx, courier.Location.Lat, courier.Location.Lng, radius, "m")
 	if err != nil {
 		log.Println(err)
 	}
@@ -49,7 +48,10 @@ func (c CourierFacade) MoveCourier(ctx context.Context, direction, zoom int) {
 		courier.Score++
 	}
 
-	c.courierService.MoveCourier(*courier, direction, zoom)
+	err = c.courierService.MoveCourier(*courier, direction, zoom)
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 func (c CourierFacade) GetStatus(ctx context.Context) cfm.CourierStatus {

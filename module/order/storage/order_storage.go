@@ -19,7 +19,7 @@ type OrderStorager interface {
 	GetByRadius(ctx context.Context, lng, lat, radius float64, unit string) ([]models.Order, error) // получить заказы в радиусе от точки
 	GetCount(ctx context.Context) (int, error)                                                      // получить количество заказов
 	RemoveOldOrders(ctx context.Context, maxAge time.Duration) error   								 // удалить старые заказы по истечению времени maxAge
-	DeleteByRadius(ctx context.Context, lng, lat, radius float64, unit string) (int, error)
+	DeleteByRadius(ctx context.Context, lat, lng, radius float64, unit string) (int, error)
 }
 
 const (
@@ -41,7 +41,7 @@ func (o *OrderStorage) Save(ctx context.Context, order models.Order, maxAge time
 	return o.saveOrderWithGeo(ctx, order, maxAge)
 }
 
-func (o *OrderStorage) DeleteByRadius(ctx context.Context, lng, lat, radius float64, unit string) (int, error){
+func (o *OrderStorage) DeleteByRadius(ctx context.Context, lat, lng, radius float64, unit string) (int, error){
 	var err error
 	var data []byte
 	var ordersLocation []redis.GeoLocation
